@@ -135,7 +135,7 @@ class SimObject:
         img = self.image.rotate(-math.degrees(self.body.transform.angle), expand=True)
         img = img.crop(img.getbbox())
 
-        self.sprite['image'] = pygame.image.fromstring(img.tostring(), img.size, img.mode)
+        self.sprite['image'] = pygame.image.fromstring(img.tobytes(), img.size, img.mode)
         self.sprite['rect'] = self.sprite['image'].get_rect()
 
         # find the new top-left corner
@@ -161,7 +161,7 @@ class SimObject:
 
 
 def get_sprite(img):
-    sprite = {'image': pygame.image.fromstring(img.tostring(), img.size, img.mode)}
+    sprite = {'image': pygame.image.fromstring(img.tobytes(), img.size, img.mode)}
     sprite['rect'] = sprite['image'].get_rect()
     return sprite
 
