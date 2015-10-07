@@ -124,6 +124,5 @@ def start_camera():
         convert_to_simobjects(cnt)
     run_pygame()
 
-
-start_camera()
-
+if __name__ == '__main__':
+    start_camera()
