@@ -109,10 +109,7 @@ class SimObject:
     def click(self, pos, world):
         if self.body.type is not Box2D.b2_dynamicBody and self.sprite['rect'].collidepoint(pos):
             world.DestroyBody(self.body)
-            if isinstance(self.fixture, list):
-                vertices = self.vertices[:]
-            else:
-                vertices = self.fixture.shape.vertices
+            vertices = self.vertices[:]
 
             self.body, self.fixture = create_dynamic_polygon(vertices, world)
             return True
@@ -120,10 +117,7 @@ class SimObject:
 
     def go_dynamic(self, world):
         world.DestroyBody(self.body)
-        if isinstance(self.fixture, list):
-            vertices = self.vertices[:]
-        else:
-            vertices = self.fixture.shape.vertices
+        vertices = self.vertices[:]
 
         self.body, self.fixture = create_dynamic_polygon(vertices, world)
 
@@ -140,12 +134,9 @@ class SimObject:
 
         # find the new top-left corner
         vertices = []
-        if isinstance(self.fixture, list):
-            for fixture in self.fixture:
-                for vertex in fixture.shape.vertices:
-                    vertices.append((self.body.transform * vertex))
-        else:
-            vertices = [(self.body.transform * v) for v in self.fixture.shape.vertices]
+        for fixture in self.fixture:
+            for vertex in fixture.shape.vertices:
+                vertices.append((self.body.transform * vertex))
 
         self.sprite['rect'][0] = min(vertices, key=lambda x: x[0])[0]
         self.sprite['rect'][1] = min(vertices, key=lambda x: x[1])[1]
@@ -182,7 +173,7 @@ def create_dynamic_polygon(vertices, world):
         return body, fixtures
 
     box = body.CreatePolygonFixture(vertices=vertices, density=1, friction=.1, restitution=.5)
-    return body, box
+    return body, [box]
 
 
 def create_polygon(vertices, world):
@@ -197,7 +188,7 @@ def create_polygon(vertices, world):
     fixture.friction = .3
     fixture.restitution = .5
     body.CreateFixture(fixture)
-    return body, fixture
+    return body, [fixture]
 
 
 # gets the vertices and breaks it up into triangles
