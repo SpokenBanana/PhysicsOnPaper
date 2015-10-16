@@ -69,8 +69,12 @@ def get_contours(img=cv2.imread('image.png', 1)):
     img_gray = cv2.medianBlur(img_gray, 5)
     ret, thresh = cv2.threshold(img_gray, 99, 255, cv2.THRESH_BINARY_INV)
     image, contour, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-    return contour
+    # filter out any child contours
+    result = []
+    for i in xrange(len(contour)):
+        if hierarchy[0][i][3] == -1:
+            result.append(contour[i])
+    return result
 
 
 def convert_to_simobjects(cnt):

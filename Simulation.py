@@ -183,7 +183,7 @@ def create_polygon(vertices, world):
     fixture.density = 2
     fixture.friction = .3
     fixture.restitution = .5
-    body.CreateFixture(fixture)
+    fixture = body.CreateFixture(fixture)
     return body, [fixture]
 
 
