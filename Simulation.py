@@ -61,6 +61,7 @@ class Spawner:
             self.objects.append(SimObject(self.vertices, self.image, self.world, dynamic))
             self.occupied = True
         elif self.occupied:
+            # most recent addition to objects would have the static body ready to fall
             self.objects[-1].go_dynamic(self.world)
             self.occupied = False
         else:
@@ -72,7 +73,7 @@ class Spawner:
     def update(self, bounds):
         to_remove = []
         for obj in self.objects:
-            obj.update()
+            obj.update(self.image)
             if not obj.sprite['rect'].colliderect(bounds):
                 obj.destroy(self.world)
                 if not self.occupied:
@@ -90,7 +91,6 @@ class Spawner:
 class SimObject:
     def __init__(self, vertices, image, world, dynamic=False):
         self.vertices = vertices[:]
-        self.image = image
 
         self.sprite = get_sprite(image)
 
@@ -106,40 +106,37 @@ class SimObject:
         self.sprite['rect'][0] = self.spawn[0] = minx
         self.sprite['rect'][1] = self.spawn[1] = miny
 
-    def click(self, pos, world):
-        if self.body.type is not Box2D.b2_dynamicBody and self.sprite['rect'].collidepoint(pos):
-            world.DestroyBody(self.body)
-            vertices = self.vertices[:]
-
-            self.body, self.fixture = create_dynamic_polygon(vertices, world)
-            return True
-        return False
-
     def go_dynamic(self, world):
         world.DestroyBody(self.body)
         vertices = self.vertices[:]
 
         self.body, self.fixture = create_dynamic_polygon(vertices, world)
 
-    def update(self):
-        if self.body.type is not Box2D.b2_dynamicBody:
+    def update(self, image):
+        if self.body.type is not Box2D.b2_dynamicBody or not self.body.awake:
             return
 
         # rotate according to the physics but keep the sprite box as tight as possible
-        img = self.image.rotate(-math.degrees(self.body.transform.angle), expand=True)
+        img = image.rotate(-math.degrees(self.body.transform.angle), expand=True)
         img = img.crop(img.getbbox())
 
         self.sprite['image'] = pygame.image.fromstring(img.tobytes(), img.size, img.mode)
         self.sprite['rect'] = self.sprite['image'].get_rect()
 
-        # find the new top-left corner
-        vertices = []
+        minx = self.fixture[0].shape.vertices[0]
+        miny = self.fixture[0].shape.vertices[1]
+
+        # get new top-left corner to keep sprite line-up with physic body
         for fixture in self.fixture:
             for vertex in fixture.shape.vertices:
-                vertices.append((self.body.transform * vertex))
+                v = (self.body.transform * vertex)
+                if v[0] < minx:
+                    minx = v[0]
+                if v[1] < miny:
+                    miny = v[1]
 
-        self.sprite['rect'][0] = min(vertices, key=lambda x: x[0])[0]
-        self.sprite['rect'][1] = min(vertices, key=lambda x: x[1])[1]
+        self.sprite['rect'][0] = minx
+        self.sprite['rect'][1] = miny
 
     def draw(self, surface):
         surface.blit(self.sprite['image'], self.sprite['rect'])
@@ -179,7 +176,6 @@ def create_dynamic_polygon(vertices, world):
 def create_polygon(vertices, world):
     body = world.CreateBody(Box2D.b2BodyDef())
 
-    # box = Box2D.b2PolygonShape(vertices=vertices)
     box = Box2D.b2ChainShape(vertices_loop=vertices[:])
 
     fixture = Box2D.b2FixtureDef()
