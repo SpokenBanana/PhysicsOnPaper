@@ -8,7 +8,6 @@ class Simulation:
         self.world = Box2D.b2World(gravity=(0, 15), doSleep=True)
         self.background = None
         self.background_rect = None
-        self.sprites = []
         self.spawns = []
         self.render_vertices = False
 
@@ -17,26 +16,26 @@ class Simulation:
         self.background_rect = self.background.get_rect()
 
     def add_sprite(self, image, vertices):
-        self.sprites.append(Spawner(vertices[:], image, self.world))
+        self.spawns.append(Spawner(vertices[:], image, self.world))
 
     def clone(self, image, vertices, dynamic=True):
-        self.sprites.append(SimObject(vertices, image, dynamic))
-        return self.sprites[-1]
+        self.spawns.append(SimObject(vertices, image, dynamic))
+        return self.spawns[-1]
 
     def update(self):
         self.world.Step(1 / 60.0, 10, 10)
-        for sprite in self.sprites:
+        for sprite in self.spawns:
             sprite.update(self.background_rect)
         self.world.ClearForces()
 
     def click_action(self, pos):
-        for sprite in self.sprites:
+        for sprite in self.spawns:
             if sprite.pos.collidepoint(pos):
                 sprite.click()
 
     def draw(self, surface):
         surface.blit(self.background, self.background_rect)
-        for sprite in self.sprites:
+        for sprite in self.spawns:
             sprite.draw(surface)
         if self.render_vertices:
             for body in self.world.bodies:
@@ -95,9 +94,9 @@ class SimObject:
         self.sprite = get_sprite(image)
 
         if dynamic:
-            self.body, self.fixture = create_dynamic_polygon(vertices[:], world)
+            self.body, self.fixture = create_dynamic_polygon(vertices, world)
         else:
-            self.body, self.fixture = create_polygon(vertices[:], world)
+            self.body, self.fixture = create_polygon(vertices, world)
 
         # find the top-left corner of the bounding box of the polygon
         minx = min(vertices, key=lambda x: x[0])[0]
@@ -108,9 +107,7 @@ class SimObject:
 
     def go_dynamic(self, world):
         world.DestroyBody(self.body)
-        vertices = self.vertices[:]
-
-        self.body, self.fixture = create_dynamic_polygon(vertices, world)
+        self.body, self.fixture = create_dynamic_polygon(self.vertices[:], world)
 
     def update(self, image):
         if self.body.type is not Box2D.b2_dynamicBody or not self.body.awake:
@@ -159,14 +156,14 @@ def create_dynamic_polygon(vertices, world):
 
     # box2d cannot create polygons with 16 or more vertices so triangulate them
     if len(vertices) >= 16:
-        fixtures = triangulate(vertices[:], body)
+        fixtures = triangulate(vertices, body)
         return body, fixtures
 
     box = Box2D.b2PolygonShape(vertices=vertices)
 
     # this means we have a concave shape
     if len(box.vertices) < len(vertices) - 1:
-        fixtures = triangulate(vertices[:], body)
+        fixtures = triangulate(vertices, body)
         return body, fixtures
 
     box = body.CreatePolygonFixture(vertices=vertices, density=1, friction=.1, restitution=.5)
@@ -176,7 +173,7 @@ def create_dynamic_polygon(vertices, world):
 def create_polygon(vertices, world):
     body = world.CreateBody(Box2D.b2BodyDef())
 
-    box = Box2D.b2ChainShape(vertices_loop=vertices[:])
+    box = Box2D.b2ChainShape(vertices_loop=vertices)
 
     fixture = Box2D.b2FixtureDef()
     fixture.shape = box
@@ -220,7 +217,7 @@ def triangulate(vertices, body):
 
 
 def does_triangle_contain(v1, v2, v3, vertex):
-    points = [0.0] * 3
+    points = []
     epsilon = 0.0000001
     points.append(((v2[1] - v3[1]) * (vertex[0] - v3[0]) + (v3[0] - v2[0]) * (vertex[1] - v3[1]))
                   / (((v2[1] - v3[1]) * (v1[0] - v3[0]) + (v3[0] - v2[0]) * (v1[1] - v3[1])) + epsilon))
