@@ -81,7 +81,7 @@ def get_contours(img=cv2.imread('image.png', 1)):
 
 
 def convert_to_simobjects(cnt):
-    background = Image.open('test.png').convert('RGBA')
+    background = Image.open('image.png').convert('RGBA')
     epsilon = 0.01 * cv2.arcLength(cnt, True)
     approx = cv2.approxPolyDP(cnt, epsilon, True)
     vertices = [(c[0][0], c[0][1]) for c in approx]
@@ -130,9 +130,9 @@ def start_camera():
     run_pygame()
 
 if __name__ == '__main__':
-    simulation.set_background('test.png')
-    get_contours(cv2.imread('test.png'))
-    for cnt in get_contours(cv2.imread('test.png')):
-        convert_to_simobjects(cnt)
-    run_pygame()
-    # start_camera()
+    # simulation.set_background('test.png')
+    # get_contours(cv2.imread('test.png'))
+    # for cnt in get_contours(cv2.imread('test.png')):
+    #     convert_to_simobjects(cnt)
+    # run_pygame()
+    start_camera()
