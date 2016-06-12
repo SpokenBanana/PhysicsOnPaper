@@ -12,15 +12,18 @@ pygame.display.set_caption('Simulation')
 simulation = Simulation()
 
 
-def create_text(text, size=25):
+def create_text(text, size=25, location=None):
     font = pygame.font.SysFont('pericles', size).render(text, False, (255, 255, 255), (10, 40, 75))
-    return font, font.get_rect()
+    if location is None:
+        return font, font.get_rect()
+    rect = font.get_rect()
+    rect.centerx = location[0]
+    rect.centery = location[1]
+    return font, rect
 
 
 def run_pygame():
-    text, text_box = create_text("display vertices")
-    text_box.centerx = 150
-    text_box.centery = 500
+    text, text_box = create_text("display vertices", location=(150, 500))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -69,12 +72,16 @@ def get_contours(img=cv2.imread('image.png', 1)):
     img_gray = cv2.medianBlur(img_gray, 5)
     ret, thresh = cv2.threshold(img_gray, 99, 255, cv2.THRESH_BINARY_INV)
     image, contour, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-    return contour
+    # filter out any child contours
+    result = []
+    for i in xrange(len(contour)):
+        if hierarchy[0][i][3] == -1:
+            result.append(contour[i])
+    return result
 
 
 def convert_to_simobjects(cnt):
-    background = Image.open('image.png').convert('RGBA')
+    background = Image.open('test.png').convert('RGBA')
     epsilon = 0.01 * cv2.arcLength(cnt, True)
     approx = cv2.approxPolyDP(cnt, epsilon, True)
     vertices = [(c[0][0], c[0][1]) for c in approx]
@@ -88,12 +95,10 @@ def convert_to_simobjects(cnt):
     simulation.add_sprite(image, vertices)
 
 
+# drawing the instructions to screen
 def intro():
-    instructions, i_box = create_text("hold up your drawing to the web-cam!", 15)
-    finish, f_box = create_text("when you think the camera has a clear view, pressed esc!", 15)
-    f_box.centerx = i_box.centerx = width/2
-    i_box.centery = 50
-    f_box.centery = 150
+    instructions, i_box = create_text("hold up your drawing to the web-cam!", 15, (width/2, 50))
+    finish, f_box = create_text("when you think the camera has a clear view, pressed esc!", 15, (width/2, 150))
     screen.blit(instructions, i_box)
     screen.blit(finish, f_box)
     pygame.display.flip()
@@ -124,6 +129,10 @@ def start_camera():
         convert_to_simobjects(cnt)
     run_pygame()
 
-
-start_camera()
-
+if __name__ == '__main__':
+    simulation.set_background('test.png')
+    get_contours(cv2.imread('test.png'))
+    for cnt in get_contours(cv2.imread('test.png')):
+        convert_to_simobjects(cnt)
+    run_pygame()
+    # start_camera()
