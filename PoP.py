@@ -1,6 +1,7 @@
 import cv2
 import numpy
 import sys
+import pygame
 from PIL import Image, ImageDraw
 from Simulation import *
 
@@ -91,6 +92,8 @@ def convert_to_simobjects(cnt):
         vertices.append((vertices[0][0] + 5, vertices[0][1] + 5))
         vertices.append((vertices[1][0] + 5, vertices[1][1] + 5))
 
+    # Box2D doesn't like numpy types
+    vertices = [(float(x), float(y)) for x, y in vertices]
     image = get_sprite_from_vertices(vertices, background, cnt)
     simulation.add_sprite(image, vertices)
 

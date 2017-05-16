@@ -47,7 +47,7 @@ class Simulation:
 class Spawner:
     def __init__(self, vertices, image, world):
         self.world = world
-        self.vertices = vertices[:]
+        self.vertices = vertices
         self.image = image
         self.objects = []
         self.occupied = False
@@ -55,7 +55,8 @@ class Spawner:
         self.pos = self.objects[0].spawn
 
     def spawn(self, dynamic):
-        # we need to know if the spawn is occupied so we won't spawn more than one object in the area
+        # we need to know if the spawn is occupied so we won't spawn more than
+        # one object in the area
         if not dynamic and not self.occupied:
             self.objects.append(SimObject(self.vertices, self.image, self.world, dynamic))
             self.occupied = True
